@@ -60,11 +60,38 @@ Keep this section short; the meat of the post is the MCP concepts + build.
 
 ## Code moments worth showing
 
-- *(commit hashes / files as built)*
+The blog has a `<RepoFile path="..." />` component — an inline chip that opens the file
+**live from GitHub** in a side panel (series `repoUrl` already points at MCP-LMS-OSS).
+Prefer it over pasting long code; use `<CodeBlock>` only for short excerpts discussed line-by-line.
+
+- `<RepoFile path="docker/docker-compose.yml" />` — the whole lab in one file
+- `<RepoFile path="docker/seed/seed_phase1.php" />` — web services, users, courses, tokens
+- `<RepoFile path="docker/seed/seed_phase1_content.php" />` — the "Moodle WS can't create
+  content" workaround: internal APIs + GIFT import + weighted `maxmark`
+- *(Phase 3: server.py, moodle_client.py, tools/learner.py as built)*
+
+## Screenshots (Figure component, save under portfolio `public/blog/mcp/`, ref as `/blog/mcp/<name>.png`)
+
+Shot-list of the seeded Moodle — captures "what Moodle gives you out of the box" so readers
+see the platform before the MCP layer abstracts it away:
+
+1. `phase1-course.png` — INTRO-MCP course page **as student1**: three named sections, two pages, quiz
+2. `phase1-page.png` — the "Tools, Resources, and Prompts" page open (the content the MCP resources will serve)
+3. `phase1-quiz-attempt.png` — quiz attempt in progress, showing "Marked out of 2.00"/"3.00" (the weightage!)
+4. `phase1-quiz-review.png` — post-submit review with per-question marks + total /6
+5. `phase1-ws-functions.png` — admin → Site administration → Server → Web services → External services → mcp_service functions list (evidence for the API section)
+
+~1400px wide, light theme, one consistent browser. Crop chrome.
+
+## Fun tie-in for the writer
+
+The blog already has `<Quiz>`/`<MCQ>` components — embed the *same three questions* from the
+Moodle quiz at the end of the post ("the same quiz you just watched me seed — your turn").
+Question source: `docker/seed/seed_phase1_content.php` (GIFT block).
 
 ## Diagrams needed
 
-- Overall architecture (AI client → MCP server → Moodle) — exists in CLAUDE.md §3, redraw for the post
+- Overall architecture (AI client → MCP server → Moodle) — exists in CLAUDE.md §3, redraw for the post (blog has `Flow`/`Pipeline` components)
 - The three primitives mapped onto the LMS domain
 
 ## Interview-question angles
