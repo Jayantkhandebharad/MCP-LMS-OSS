@@ -208,4 +208,56 @@ if ($existingslots >= 3) {
     say('[ok] sumgrades recomputed');
 }
 
+// ---------- 5. Fixups (always run; each is idempotent) ----------
+// 5a. add_moduleinfo()'s editor-field processing (file_postupdate_standard_editor
+// with draft itemid 0) silently discards page content — write it directly.
+foreach ($pages as $p) {
+    $rec = $DB->get_record('page', ['course' => $course->id, 'name' => $p['name']]);
+    if ($rec && trim($rec->content) === '') {
+        $DB->set_field('page', 'content', $p['content'], ['id' => $rec->id]);
+        $DB->set_field('page', 'contentformat', FORMAT_HTML, ['id' => $rec->id]);
+        say("[fix] page '{$p['name']}' content written");
+    }
+}
+
+// 5b. quiz_add_instance() → quiz_process_options() rebuilds the review-option
+// bitmasks from form checkbox fields we never passed, zeroing them — students
+// saw "Review not permitted" and no grade. 0x11110 = during | immediately
+// after | later while open | after close.
+$allreview = 0x11110;
+$reviewfields = ['reviewattempt', 'reviewcorrectness', 'reviewmarks',
+    'reviewspecificfeedback', 'reviewgeneralfeedback', 'reviewrightanswer',
+    'reviewoverallfeedback'];
+$columns = $DB->get_columns('quiz');
+if (isset($columns['reviewmaxmarks'])) {
+    $reviewfields[] = 'reviewmaxmarks'; // added in Moodle 4.3
+}
+$changed = false;
+foreach ($reviewfields as $f) {
+    if ((int) $quiz->$f !== $allreview) {
+        $DB->set_field('quiz', $f, $allreview, ['id' => $quiz->id]);
+        $changed = true;
+    }
+}
+if ($changed) {
+    say('[fix] quiz review options opened up (marks/answers visible after attempt)');
+}
+
+// 5c. Cosmetics for a presentable site: the install arg couldn't take spaces,
+// and the default category is literally named "Category 1".
+$site = $DB->get_record('course', ['id' => SITEID]);
+if ($site->fullname === 'MCP_Learning_Lab') {
+    $DB->set_field('course', 'fullname', 'MCP Learning Lab', ['id' => SITEID]);
+    $DB->set_field('course', 'shortname', 'MCP Lab', ['id' => SITEID]);
+    say('[fix] site renamed to "MCP Learning Lab"');
+}
+$cat = $DB->get_record('course_categories',
+    ['id' => $DB->get_field_sql('SELECT MIN(id) FROM {course_categories}')]);
+if ($cat && $cat->name === 'Category 1') {
+    $DB->set_field('course_categories', 'name', 'Courses', ['id' => $cat->id]);
+    say('[fix] default category renamed to "Courses"');
+}
+
+purge_all_caches();
+say('[ok] caches purged');
 say('=== content seed done ===');
