@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const outIdx = process.argv.indexOf('--out')
-const outDir = resolve(outIdx > -1 ? process.argv[outIdx + 1] : join(here, 'out'))
+const outDir = resolve(outIdx > -1 ? process.argv[outIdx + 1] : join(here, '../../docs/screenshots'))
 mkdirSync(outDir, { recursive: true })
 
 const env = Object.fromEntries(
