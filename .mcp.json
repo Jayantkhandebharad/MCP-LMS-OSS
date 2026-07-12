@@ -4,8 +4,7 @@
       "command": "uv",
       "args": ["run", "--directory", "mcp_server", "moodle-mcp"],
       "env": {
-        "MOODLE_URL": "http://localhost:8080",
-        "MOODLE_TOKEN": "${MOODLE_TOKEN}"
+        "MOODLE_URL": "http://localhost:8080"
       }
     }
   }
