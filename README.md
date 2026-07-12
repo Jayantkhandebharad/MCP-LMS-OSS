@@ -34,13 +34,25 @@ AI client ──(stdio → Streamable HTTP + OAuth 2.1)──▶ MCP Server (Pyt
 
 ## Status
 
-🚧 **Phase 0 complete** — repo scaffolded. Next up: Moodle running in Docker Compose with seeded courses.
+🚧 **Phase 1 complete** — Moodle 5.2.1 running in Docker Compose with a fully scripted seed (courses, weighted quiz, test users, Web Services + REST tokens). Next up: exploring the Moodle API by hand, then the MCP server itself.
 
 See the [phased plan in CLAUDE.md](CLAUDE.md#6-phased-plan-each-phase--checkpoint--blog-post) for the full roadmap.
 
 ## Quick start
 
-*(Coming with Phase 1 — everything will be reproducible via `docker compose up` + documented seed steps.)*
+```bash
+cd docker
+cp .env.example .env        # edit passwords (no spaces in MOODLE_SITENAME!)
+docker compose up -d        # first boot auto-installs Moodle (~2-3 min)
+
+# seed: web services, users, courses, content, quiz, API tokens
+docker compose cp seed/seed_phase1.php moodle:/tmp/
+docker compose exec -T moodle php /tmp/seed_phase1.php
+docker compose cp seed/seed_phase1_content.php moodle:/tmp/
+docker compose exec -T moodle php /tmp/seed_phase1_content.php
+```
+
+Moodle at http://localhost:8080 — full steps and smoke tests in [notes/phase-1-seed-plan.md](notes/phase-1-seed-plan.md).
 
 ## License
 

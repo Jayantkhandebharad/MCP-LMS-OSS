@@ -1,0 +1,54 @@
+# Moodle + PostgreSQL for local development.
+#
+#   cp .env.example .env   # then edit passwords
+#   docker compose up -d
+#
+# First boot auto-installs Moodle (takes a few minutes) — watch with:
+#   docker compose logs -f moodle
+#
+# Image choice: erseco/alpine-moodle (community, actively maintained).
+# The classic bitnami/moodle image moved behind Broadcom's paid program in
+# late 2025; moodlehq images are dev-oriented and don't auto-install.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-moodle}
+      POSTGRES_USER: ${DB_USER:-moodle}
+      POSTGRES_PASSWORD: ${DB_PASS:?set DB_PASS in docker/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-moodle} -d ${DB_NAME:-moodle}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  moodle:
+    image: erseco/alpine-moodle:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${MOODLE_PORT:-8080}:8080"
+    environment:
+      SITE_URL: http://localhost:${MOODLE_PORT:-8080}
+      DB_TYPE: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-moodle}
+      DB_USER: ${DB_USER:-moodle}
+      DB_PASS: ${DB_PASS:?set DB_PASS in docker/.env}
+      MOODLE_USERNAME: ${MOODLE_ADMIN_USER:-admin}
+      MOODLE_PASSWORD: ${MOODLE_ADMIN_PASS:?set MOODLE_ADMIN_PASS in docker/.env}
+      MOODLE_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@example.com}
+      MOODLE_SITENAME: ${MOODLE_SITENAME:-MCP Learning Lab}
+    volumes:
+      - moodledata:/var/www/moodledata
+      - moodlehtml:/var/www/html
+
+volumes:
+  pgdata:
+  moodledata:
+  moodlehtml:

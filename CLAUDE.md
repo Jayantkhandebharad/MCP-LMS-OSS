@@ -136,7 +136,7 @@ MCP-LMS-OSS/
 
 - [x] Planning complete, decisions locked (2026-07-12)
 - [x] Phase 0: repo created, layout scaffolded (2026-07-12)
-- [ ] Phase 1: Moodle running + seeded
+- [x] Phase 1: Moodle 5.2.1 running + fully scripted seed (2026-07-12) — see `notes/phase-1-seed-plan.md`; tokens in `docker/.env`
 - [ ] Phase 2: API cheat-sheet
 - [ ] Phase 3: MCP server v1 (stdio) — Blog #1
 - [ ] Phase 4: HTTP + RBAC — Blog #2
