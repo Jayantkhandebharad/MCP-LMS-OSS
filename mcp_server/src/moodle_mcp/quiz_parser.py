@@ -40,8 +40,12 @@ class _QuestionHTMLParser(HTMLParser):
         self._qtext_parts: list[str] = []
         self._pending_radio: tuple[str, str] | None = None
         self._label_parts: list[str] = []
+        self._in_script = False  # <script>/<style> text is not visible content
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in {"script", "style"}:
+            self._in_script = True
+            return
         a = dict(attrs)
         classes = (a.get("class") or "").split()
         if self._qtext_depth:
@@ -51,16 +55,26 @@ class _QuestionHTMLParser(HTMLParser):
         if tag == "input":
             if a.get("type") == "radio":
                 self._flush_radio()
-                self._pending_radio = (a.get("name", ""), a.get("value", ""))
+                value = a.get("value", "")
+                if value == "-1":
+                    # Moodle's "Clear my choice" pseudo-option — not an answer.
+                    self._pending_radio = None
+                else:
+                    self._pending_radio = (a.get("name", ""), value)
                 self._label_parts = []
             elif a.get("type") == "hidden" and a.get("name"):
                 self.hidden[a["name"]] = a.get("value") or ""
 
     def handle_endtag(self, tag: str) -> None:
+        if tag in {"script", "style"}:
+            self._in_script = False
+            return
         if self._qtext_depth:
             self._qtext_depth -= 1
 
     def handle_data(self, data: str) -> None:
+        if self._in_script:
+            return
         if self._qtext_depth:
             self._qtext_parts.append(data)
         if self._pending_radio:

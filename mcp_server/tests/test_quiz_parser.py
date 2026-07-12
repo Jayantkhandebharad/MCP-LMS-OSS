@@ -19,9 +19,14 @@ QUESTION_HTML = """
           <input type="radio" name="q4:1_answer" value="1" id="q4_1_answer1">
           <label for="q4_1_answer1"><span class="answernumber">b. </span>Model Context Protocol</label>
         </div>
+        <div class="qtype_multichoice_clearchoice">
+          <input type="radio" name="q4:1_answer" value="-1" id="q4_1_answer-1">
+          <label for="q4_1_answer-1">Clear my choice</label>
+        </div>
       </fieldset>
     </div>
   </div>
+  <script>var require = { baseUrl: 'http://x/requirejs' }; M.util.js_pending("core/first");</script>
 </div>
 """
 

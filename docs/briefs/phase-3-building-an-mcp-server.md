@@ -1,7 +1,37 @@
-# Brief: I Built an MCP Server for Moodle  (Phase 3)
+# Brief: I Built an MCP Server for Moodle  (Phase 3 → Blog #1b)
 
-> Status: **collecting** — phases 0–3 feed this brief. Post gets written in
-> `portfolio/src/content/blog/mcp/building-an-mcp-server.tsx` once Phase 3 is done.
+> Status: **REVISION REQUIRED (2026-07-13).** First draft reviewed: too much theory,
+> too cluttered, assumed the reader knows MCP and Moodle. The fix is a SPLIT:
+> all MCP theory moves to a new intro post (brief: `blog-1a-what-is-mcp.md`);
+> THIS post becomes a lean build log. Target file unchanged:
+> `portfolio/src/content/blog/mcp/building-an-mcp-server.tsx`.
+
+## Revision directives (override anything below that conflicts)
+
+- **Audience**: same as the intro post — a third-year student who just read it.
+  Plain language, define terms on first use, short sentences.
+- **Open with a clear objective**, one paragraph: "we're going to make an AI able to
+  use a real learning platform — here's the demo, here's how we get there."
+- **Introduce Moodle properly**: reader has never seen an LMS. Two paragraphs +
+  the dashboard screenshot: what an LMS is, what Moodle gives us out of the box
+  (courses/quizzes/roles), why wrapping a real system beats a toy.
+- **Structure as a STEP-BY-STEP build**, each step pinned to the repo's real state
+  via commit ids — `<RepoFile path="..." branch="<commit-sha>" />` renders the file
+  AS IT WAS at that step (verified working). Steps and their anchors:
+  | Step | Commit | Story |
+  |---|---|---|
+  | 0. Plan + scaffold | `7188235` | what we're building, repo layout |
+  | 1. Moodle running + seeded | `5fb1a89` (+fixes `1006ac5`) | Docker lab; sitename gotcha; "the API can't create content" discovery |
+  | 2. Learn the API by hand | `7100c09` | always-HTTP-200; the quiz-is-HTML horror; cheat-sheet |
+  | 3. Server skeleton + first tool | `75e24d6` | FastMCP, stdio, stdout-is-sacred, first tool working |
+  | 4. Full surface | `e369905` | 9 tools + resources + prompts; submit-by-option-text design |
+  | 5. Field test | `ec3b2c3`+ | real client found the script-blob parser bug; the demo |
+- **Cut candidates from the draft** (move or drop): the full "What MCP actually is"
+  section (→ intro post), long FastMCP mechanics exposition (fold the one key idea —
+  docstring-is-for-the-LLM — into step 3), reduce TLDR to 3 bullets, keep gotchas
+  as short Callouts inside their step rather than a separate catalog section.
+- Keep: the demo hook at top, Try-it-yourself, the closing MCQ quiz, Inspector section
+  (short, with `phase3-tools-list.png`).
 
 ## One-line thesis
 
@@ -117,6 +147,16 @@ Prefer it over pasting long code; use `<CodeBlock>` only for short excerpts disc
   package needs its own README, not just the repo one.
 - Only multichoice questions supported so far; the parser raises a clear error for other
   types (essay etc.) rather than mis-parsing.
+- **The first REAL client session immediately found a bug the tests missed** (2026-07-13):
+  live Moodle question HTML embeds inline `<script>` blobs and a "Clear my choice"
+  pseudo-option (value=-1); our parser leaked a wall of RequireJS config into an option
+  label. The unit-test fixture was too clean. Fix: skip script/style text + drop value=-1;
+  fixture now includes both. Lesson for the post: test fixtures must be as ugly as reality.
+- Env-var expansion (`${MOODLE_TOKEN}`) in client configs is unreliable — GUI-launched
+  apps don't inherit your shell env/PATH. Fix: the server falls back to reading the lab's
+  gitignored `docker/.env` itself; also use absolute command paths in Desktop configs.
+- stdio corollary discovered in practice: the client owns the server process — config/code
+  changes need a client-side reconnect (or kill the process; the client respawns it).
 
 ## Screenshots (live in THIS repo: `docs/screenshots/` — gallery in its README)
 
@@ -137,6 +177,28 @@ Shot-list ("what Moodle gives you out of the box", before the MCP layer abstract
 5. `phase1-quiz-review.png` — review: Grade 4.00/6.00, per-question marks 1.00/1.00 and 0.00/2.00 (the weightage!)
 6. `phase1-grader-report.png` — teacher1's grader report (role contrast)
 7. `phase1-ws-functions.png` — admin: mcp_service function list (evidence for the API section)
+8. `phase3-claude-demo.png` — **the hook: open the post with this.** Claude in Claude Code
+   taking the quiz through our server: get_quizzes → start_quiz → visible reasoning about
+   the answers → submit_quiz_answers → 6/6 gradedright. Real session, unstaged.
+
+## "Try it yourself" section (required — put near the end, before the embedded quiz)
+
+Readers must be able to reproduce the demo from a fresh clone. Steps, all verified:
+
+```bash
+git clone https://github.com/Jayantkhandebharad/MCP-LMS-OSS && cd MCP-LMS-OSS
+cd docker && cp .env.example .env   # edit passwords
+docker compose up -d                # wait ~2-3 min for first-boot install
+docker compose cp seed/seed_phase1.php moodle:/tmp/ && docker compose exec -T moodle php /tmp/seed_phase1.php
+docker compose cp seed/seed_phase1_content.php moodle:/tmp/ && docker compose exec -T moodle php /tmp/seed_phase1_content.php
+cd .. && claude mcp add moodle -- uv run --directory mcp_server moodle-mcp   # or use the repo's .mcp.json / Claude Desktop config
+# then in a Claude session: "take the MCP Basics Quiz"
+```
+
+Selling points to state: no token exports needed (the server falls back to the seeded
+docker/.env), and ANY MCP client works the same — Claude Code, Claude Desktop, Cursor,
+MCP Inspector — because that's the point of the protocol (the M×N problem). Mention
+`npx @modelcontextprotocol/inspector` as the zero-AI way to poke the server.
 
 ## Fun tie-in for the writer
 

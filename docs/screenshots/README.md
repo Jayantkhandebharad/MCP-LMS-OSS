@@ -36,3 +36,14 @@ https://raw.githubusercontent.com/Jayantkhandebharad/MCP-LMS-OSS/main/docs/scree
 
 ### `mcp_service` external service — the 29 whitelisted functions
 ![Web service functions](phase1-ws-functions.png)
+
+## Phase 3 — the MCP server in action
+
+### Claude (in Claude Code) takes the quiz through our MCP server: 6/6
+Captured manually from a live session — tool calls, Claude's reasoning, and the graded result.
+![Claude takes the quiz via MCP](phase3-claude-demo.png)
+
+### The client's MCP panel: our server connected, 9 tools discovered
+Note the read-only badges — those are our tool annotations (readOnlyHint) being honored;
+`start_quiz` and `submit_quiz_answers` correctly lack them.
+![MCP servers panel with moodle connected](phase3-tools-list.png)
