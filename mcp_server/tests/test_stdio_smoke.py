@@ -24,22 +24,88 @@ def _token(name: str) -> str:
     pytest.skip(f"{name} not in docker/.env")
 
 
-async def test_list_my_courses_as_student():
-    params = StdioServerParameters(
+def _student_params() -> StdioServerParameters:
+    return StdioServerParameters(
         command="uv",
         args=["run", "moodle-mcp"],
         cwd=str(REPO_ROOT / "mcp_server"),
         env={"MOODLE_TOKEN": _token("MOODLE_TOKEN_STUDENT1"), "PATH": __import__("os").environ["PATH"]},
     )
-    async with stdio_client(params) as (read, write):
+
+
+async def test_full_surface_as_student():
+    """One session exercising tools, resources, and prompts end to end."""
+    async with stdio_client(_student_params()) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
 
-            tools = await session.list_tools()
-            names = [t.name for t in tools.tools]
-            assert "list_my_courses" in names
+            # --- the three primitives are all advertised ---
+            tools = {t.name for t in (await session.list_tools()).tools}
+            assert {
+                "list_my_courses", "get_course_contents", "get_topic_material",
+                "get_quizzes", "start_quiz", "submit_quiz_answers",
+                "get_my_grades", "get_my_progress", "search_courses",
+            } <= tools
 
-            result = await session.call_tool("list_my_courses", {})
+            prompts = {p.name for p in (await session.list_prompts()).prompts}
+            assert {"quiz_me", "study_plan", "explain_like_im_new"} <= prompts
+
+            templates = await session.list_resource_templates()
+            uris = {t.uriTemplate for t in templates.resourceTemplates}
+            assert "course://{course_id}" in uris
+
+            # --- tools return real seeded data ---
+            text = (await session.call_tool("list_my_courses", {})).content[0].text
+            assert "Intro to MCP" in text and "Docker Fundamentals" in text
+
+            text = (await session.call_tool("get_course_contents", {"course_id": 2})).content[0].text
+            assert "MCP Primitives" in text
+
+            text = (await session.call_tool("get_topic_material", {"course_id": 2, "topic": 2})).content[0].text
+            assert "three primitives" in text.lower()
+
+            # --- resource read ---
+            res = await session.read_resource("course://2/topic/1")
+            assert "Model Context Protocol" in res.contents[0].text
+
+
+async def test_quiz_attempt_via_mcp():
+    """The crown jewel: take the whole quiz through MCP and score 6/6."""
+    async with stdio_client(_student_params()) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            text = (await session.call_tool("start_quiz", {"quiz_id": 1})).content[0].text
+            assert "Question 1" in text and "Question 3" in text
+
+            result = await session.call_tool(
+                "submit_quiz_answers",
+                {
+                    "quiz_id": 1,
+                    "answers": {
+                        1: "Model Context Protocol",
+                        2: "Resources",
+                        3: "The server asks the client",
+                    },
+                },
+            )
             text = result.content[0].text
-            assert "Intro to MCP" in text
-            assert "Docker Fundamentals" in text
+            assert "6 marks" in text
+            assert text.count("gradedright") == 3
+
+
+async def test_grades_and_wrong_answer_feedback():
+    async with stdio_client(_student_params()) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            text = (await session.call_tool("get_my_grades", {"course_id": 2})).content[0].text
+            assert "MCP Basics Quiz" in text and "Course total" in text
+
+            # Non-matching answer text -> actionable error, nothing submitted.
+            result = await session.call_tool(
+                "submit_quiz_answers",
+                {"quiz_id": 1, "answers": {1: "Blockchain Protocol"}},
+            )
+            text = result.content[0].text
+            assert "does not match any option" in text

@@ -86,3 +86,86 @@ class MoodleClient:
     async def my_courses(self) -> list[dict[str, Any]]:
         """Courses the token's user is enrolled in."""
         return await self.call("core_enrol_get_users_courses", userid=await self.my_userid())
+
+    async def course_contents(self, courseid: int) -> list[dict[str, Any]]:
+        """Sections and modules of one course."""
+        return await self.call("core_course_get_contents", courseid=courseid)
+
+    async def pages_in_course(self, courseid: int) -> list[dict[str, Any]]:
+        """Page activities with their full HTML content."""
+        result = await self.call("mod_page_get_pages_by_courses", courseids=[courseid])
+        return result["pages"]
+
+    async def quizzes_in_course(self, courseid: int) -> list[dict[str, Any]]:
+        result = await self.call("mod_quiz_get_quizzes_by_courses", courseids=[courseid])
+        return result["quizzes"]
+
+    async def quiz_attempts(self, quizid: int, status: str = "all") -> list[dict[str, Any]]:
+        result = await self.call("mod_quiz_get_user_attempts", quizid=quizid, status=status)
+        return result["attempts"]
+
+    async def start_or_resume_attempt(self, quizid: int) -> dict[str, Any]:
+        """Start a new attempt, or transparently resume the in-progress one.
+
+        Moodle allows only one open attempt per user (errorcode
+        attemptstillinprogress) — an LLM shouldn't have to know that.
+        """
+        try:
+            return (await self.call("mod_quiz_start_attempt", quizid=quizid))["attempt"]
+        except MoodleAPIError as e:
+            if e.errorcode != "attemptstillinprogress":
+                raise
+            unfinished = await self.quiz_attempts(quizid, status="unfinished")
+            return unfinished[-1]
+
+    async def attempt_pages(self, attempt: dict[str, Any]) -> list[dict[str, Any]]:
+        """All raw question blocks of an attempt, across its pages.
+
+        The layout string "1,0,2,0,3,0" lists slots with 0 as page separators.
+        """
+        page_count = attempt["layout"].count("0") or 1
+        questions: list[dict[str, Any]] = []
+        for page in range(page_count):
+            data = await self.call(
+                "mod_quiz_get_attempt_data", attemptid=attempt["id"], page=page
+            )
+            questions.extend(data["questions"])
+        return questions
+
+    async def finish_attempt(self, attemptid: int, fields: dict[str, str]) -> str:
+        """Submit answer form fields and finish the attempt. Returns final state."""
+        data = [{"name": k, "value": v} for k, v in fields.items()]
+        result = await self.call(
+            "mod_quiz_process_attempt", attemptid=attemptid, finishattempt=1, data=data
+        )
+        return result["state"]
+
+    async def attempt_review(self, attemptid: int) -> dict[str, Any]:
+        return await self.call("mod_quiz_get_attempt_review", attemptid=attemptid)
+
+    async def my_grades(self, courseid: int) -> list[dict[str, Any]]:
+        """Grade items for the current user in one course.
+
+        Students MUST pass their own userid explicitly — omitting it means
+        "all users" and fails with nopermissions (cheat-sheet finding).
+        """
+        result = await self.call(
+            "gradereport_user_get_grade_items",
+            courseid=courseid,
+            userid=await self.my_userid(),
+        )
+        return result["usergrades"][0]["gradeitems"]
+
+    async def my_completion(self, courseid: int) -> list[dict[str, Any]]:
+        result = await self.call(
+            "core_completion_get_activities_completion_status",
+            courseid=courseid,
+            userid=await self.my_userid(),
+        )
+        return result["statuses"]
+
+    async def search_courses(self, query: str) -> list[dict[str, Any]]:
+        result = await self.call(
+            "core_course_search_courses", criterianame="search", criteriavalue=query
+        )
+        return result["courses"]

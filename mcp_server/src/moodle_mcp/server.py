@@ -41,7 +41,8 @@ async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
 
 mcp = FastMCP("moodle_mcp", lifespan=lifespan)
 
-# Tool modules register themselves against `mcp` on import.
+# Tool/resource/prompt modules register themselves against `mcp` on import.
+from moodle_mcp import prompts, resources  # noqa: E402,F401
 from moodle_mcp.tools import learner  # noqa: E402,F401
 
 
