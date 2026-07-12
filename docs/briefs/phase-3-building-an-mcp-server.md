@@ -58,6 +58,23 @@ Keep this section short; the meat of the post is the MCP concepts + build.
 - Seed scripts: `docker/seed/seed_phase1.php` (config/users/courses/tokens) and
   `docker/seed/seed_phase1_content.php` (pages/questions/quiz) — both idempotent.
 
+**Phase 2 (2026-07-12) — poking the API by hand (full detail: `notes/api-cheatsheet.md`):**
+
+- **HTTP status is always 200**, errors only in the body — every client must sniff for
+  `{"exception": ...}`.
+- **Submitting a quiz answer requires parsing rendered HTML.** `mod_quiz_get_attempt_data`
+  returns the browser form as HTML; you extract `q{attempt}:{slot}_answer` field names,
+  match shuffled options *by label text*, and echo back hidden `sequencecheck` fields.
+  Working demo: `notes/scripts/quiz_attempt_demo.py` (scored 6/6 over pure REST).
+  This is THE showcase for "clean MCP tools over a messy legacy API".
+- **`editingteacher` cannot create courses** — Moodle roles are contextual (course-level
+  vs category-level capabilities). Directly shapes Phase 4 RBAC: derive tool lists from
+  capabilities, not role names.
+- Students must pass their own `userid` to the grades API; omitting it means "everyone"
+  and 403s. LLM-facing tools should default to "me".
+- `core_webservice_get_site_info` returns the caller's identity + exact callable function
+  list — a ready-made "who am I / what can I do" for tool gating.
+
 ## Code moments worth showing
 
 The blog has a `<RepoFile path="..." />` component — an inline chip that opens the file
