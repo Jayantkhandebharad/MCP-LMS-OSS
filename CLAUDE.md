@@ -138,7 +138,7 @@ MCP-LMS-OSS/
 - [x] Phase 0: repo created, layout scaffolded (2026-07-12)
 - [x] Phase 1: Moodle 5.2.1 running + fully scripted seed (2026-07-12) — see `notes/phase-1-seed-plan.md`; tokens in `docker/.env`
 - [x] Phase 2: API cheat-sheet (2026-07-12) — `notes/api-cheatsheet.md`; key findings: quiz answers require HTML parsing, editingteacher can't create courses (contextual roles!), site_info returns per-token function list (Phase 4 gating)
-- [ ] Phase 3: MCP server v1 (stdio) — Blog #1
+- [x] Phase 3: MCP server v1 (stdio) — 9 learner tools + 3 resources + 3 prompts, e2e protocol tests incl. 6/6 quiz attempt via MCP (2026-07-13). `.mcp.json` wires it into Claude Code (export MOODLE_TOKEN first). **→ Blog #1 ready to write** (brief: `docs/briefs/phase-3-building-an-mcp-server.md`)
 - [ ] Phase 4: HTTP + RBAC — Blog #2
 - [ ] Phase 5: OAuth 2.1 + Keycloak — Blog #3
 - [ ] Phase 6: sampling + security — Blog #4

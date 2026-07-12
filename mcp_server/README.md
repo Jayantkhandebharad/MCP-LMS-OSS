@@ -24,3 +24,45 @@ Environment:
 ```bash
 npx @modelcontextprotocol/inspector -e MOODLE_TOKEN=<token> uv run moodle-mcp
 ```
+
+## Connect to Claude Code
+
+The repo root has a project-scoped `.mcp.json` — just export the token before
+starting a session in this repo:
+
+```bash
+export MOODLE_TOKEN=<student or teacher token from docker/.env>
+claude
+# then: "list my courses", "quiz me on Intro to MCP", ...
+```
+
+## Connect to Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`
+(Settings → Developer → Edit Config):
+
+```json
+{
+  "mcpServers": {
+    "moodle": {
+      "command": "uv",
+      "args": ["run", "--directory", "/ABS/PATH/TO/MCP-LMS-OSS/mcp_server", "moodle-mcp"],
+      "env": {
+        "MOODLE_URL": "http://localhost:8080",
+        "MOODLE_TOKEN": "<token from docker/.env>"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop; the hammer icon shows 9 Moodle tools, and the
+`/quiz_me` prompt appears in the prompt picker.
+
+## What the server exposes
+
+| Primitive | Names |
+|---|---|
+| Tools (9) | `list_my_courses`, `get_course_contents`, `get_topic_material`, `get_quizzes`, `start_quiz`, `submit_quiz_answers`, `get_my_grades`, `get_my_progress`, `search_courses` |
+| Resources | `course://{id}`, `course://{id}/topic/{n}`, `quiz://{id}` |
+| Prompts | `quiz_me`, `study_plan`, `explain_like_im_new` |

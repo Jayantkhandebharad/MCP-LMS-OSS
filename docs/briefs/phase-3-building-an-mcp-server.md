@@ -25,10 +25,24 @@ Keep this section short; the meat of the post is the MCP concepts + build.
 
 ## Concepts to teach (in depth — this is the point of the series)
 
-- The three MCP primitives — tools vs resources vs prompts, when to use each → *(fill in with our code refs)*
-- stdio transport: what actually goes over the wire (JSON-RPC), how a client launches the server
-- Tool design for LLM consumers: naming, descriptions, error messages — contrasted against raw Moodle API
-- *(add as built)*
+- **The three MCP primitives and WHO initiates each** — the framing that makes them click:
+  model → tool (`tools/learner.py`), application → resource (`resources.py`),
+  user → prompt (`prompts.py`). All three in one server, same underlying data.
+- **stdio transport** — the client *spawns the server as a subprocess* and speaks
+  JSON-RPC over stdin/stdout. Consequence: stdout belongs to the protocol, so a stray
+  `print()` corrupts the session — log to stderr (see `server.py`). Show the
+  handshake from `tests/test_stdio_smoke.py`: initialize → list_tools → call_tool.
+- **FastMCP mechanics**: `@mcp.tool` turns a function into a tool; the *docstring becomes
+  the description the LLM reads* (write docstrings as instructions to an AI, not to a dev);
+  `lifespan` holds the shared Moodle client; annotations (readOnlyHint etc.) tell clients
+  what's safe.
+- **Tool design for LLM consumers** (`submit_quiz_answers` is the case study):
+  the LLM answers with option TEXT, the server matches it to Moodle's shuffled radio
+  values; wrong text returns the valid options in the error. The AI never sees form
+  plumbing. Contrast with the raw API section below.
+- **The adapter layer pattern**: every Moodle quirk (PHP array encoding, errors-as-200,
+  one-open-attempt) lives in `moodle_client.py` with a comment; tools stay clean.
+- **MCP Inspector** as the dev loop: `npx @modelcontextprotocol/inspector -e MOODLE_TOKEN=... uv run moodle-mcp`.
 
 ## Real issues we hit (capture these THE DAY they happen)
 
@@ -85,7 +99,24 @@ Prefer it over pasting long code; use `<CodeBlock>` only for short excerpts disc
 - `<RepoFile path="docker/seed/seed_phase1.php" />` — web services, users, courses, tokens
 - `<RepoFile path="docker/seed/seed_phase1_content.php" />` — the "Moodle WS can't create
   content" workaround: internal APIs + GIFT import + weighted `maxmark`
-- *(Phase 3: server.py, moodle_client.py, tools/learner.py as built)*
+- `<RepoFile path="mcp_server/src/moodle_mcp/server.py" />` — FastMCP + lifespan, ~50 lines
+- `<RepoFile path="mcp_server/src/moodle_mcp/moodle_client.py" />` — the adapter layer
+- `<RepoFile path="mcp_server/src/moodle_mcp/quiz_parser.py" />` — HTML → structured questions
+- `<RepoFile path="mcp_server/src/moodle_mcp/tools/learner.py" />` — the 9 tools
+- `<RepoFile path="mcp_server/tests/test_stdio_smoke.py" />` — the client's-eye view
+- Short excerpt candidates for `<CodeBlock>`: the `@mcp.tool` decorator on
+  `submit_quiz_answers`; the `_flatten()` PHP-encoding helper; the stderr-only rule.
+
+**Phase 3 build gotchas (2026-07-13):**
+
+- Moodle's `mod_quiz_get_attempt_data` layout string `"1,0,2,0,3,0"` — slots with `0` as
+  page separators; you iterate pages, not questions.
+- FastMCP registers tools at import time — module import order in `server.py` IS the
+  registration mechanism (`from moodle_mcp.tools import learner  # noqa: F401`).
+- hatchling refuses to build if `readme = "README.md"` points at a missing file — the
+  package needs its own README, not just the repo one.
+- Only multichoice questions supported so far; the parser raises a clear error for other
+  types (essay etc.) rather than mis-parsing.
 
 ## Screenshots (live in THIS repo: `docs/screenshots/` — gallery in its README)
 
