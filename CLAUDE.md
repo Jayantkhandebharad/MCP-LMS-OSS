@@ -138,8 +138,31 @@ MCP-LMS-OSS/
 - [x] Phase 0: repo created, layout scaffolded (2026-07-12)
 - [x] Phase 1: Moodle 5.2.1 running + fully scripted seed (2026-07-12) — see `notes/phase-1-seed-plan.md`; tokens in `docker/.env`
 - [x] Phase 2: API cheat-sheet (2026-07-12) — `notes/api-cheatsheet.md`; key findings: quiz answers require HTML parsing, editingteacher can't create courses (contextual roles!), site_info returns per-token function list (Phase 4 gating)
-- [x] Phase 3: MCP server v1 (stdio) — 9 learner tools + 3 resources + 3 prompts, e2e protocol tests incl. 6/6 quiz attempt via MCP (2026-07-13). `.mcp.json` wires it into Claude Code (export MOODLE_TOKEN first). **→ Blog #1 ready to write** (brief: `docs/briefs/phase-3-building-an-mcp-server.md`)
-- [ ] Phase 4: HTTP + RBAC — Blog #2
+- [x] Phase 3: MCP server v1 (stdio) — 9 learner tools + 3 resources + 3 prompts, e2e protocol tests incl. 6/6 quiz attempt via MCP (2026-07-13). Field-tested in real Claude Code sessions (found+fixed a parser bug: script blobs in live quiz HTML). `.mcp.json` wires it into Claude Code; no token export needed (server falls back to `docker/.env`).
+- [ ] **Blog #1 — in revision.** First draft was too theory-heavy for the target reader (3rd-year student). Split into two posts: **1a "What is MCP, Actually?"** (all theory, brief: `docs/briefs/blog-1a-what-is-mcp.md`) + **1b build log** (step-by-step pinned to commit ids via `<RepoFile branch="<sha>">`, revision directives at top of `docs/briefs/phase-3-building-an-mcp-server.md`). Writer rewrite pending in portfolio repo.
+- [ ] Phase 4: HTTP + RBAC — Blog #2. **NEXT.** Plan: (1) Streamable HTTP transport — `FastMCP.run(transport="streamable-http")` exists in our SDK version, plus `streamable_http_app()` for mounting; (2) per-request `Authorization: Bearer <moodle-token>` → MoodleClient mapping (replaces the single lifespan client); (3) role-gated tool lists derived from capabilities, NOT role names — key facts: `site_info` returns the caller's callable function list; editingteacher CANNOT create courses (contextual roles, see cheat-sheet); creator tools (`tools/creator.py`) still unwritten.
+- [ ] Phase 4 note: teacher1 needs `coursecreator` role at category level (or we scope creator tools to in-course actions) — decide when building `create_course`.
 - [ ] Phase 5: OAuth 2.1 + Keycloak — Blog #3
 - [ ] Phase 6: sampling + security — Blog #4
 - [ ] Phase 7: k8s + GCP — Blog #5 *(deferred)*
+
+## 11. Picking up on a new machine
+
+Everything reproducible is in git; three things are NOT and must be recreated:
+
+1. **Moodle data (Docker volumes).** Recreate:
+   `cd docker && cp .env.example .env` (edit passwords, NO SPACES in sitename) →
+   `docker compose up -d` → wait for HTTP 200 on `/login/index.php` → run both
+   seed scripts (`notes/phase-1-seed-plan.md` has the exact commands).
+2. **API tokens (`docker/.env`, gitignored).** The fresh seed PRINTS new tokens —
+   append them to `docker/.env` as `MOODLE_TOKEN_ADMIN/STUDENT1/TEACHER1`. The MCP
+   server auto-reads `MOODLE_TOKEN_STUDENT1` from there (no env export needed).
+   Old tokens from another machine are useless (different Moodle install).
+3. **Client wiring.** Claude Code: repo `.mcp.json` just works. Claude Desktop:
+   config snippet in `mcp_server/README.md` (absolute paths, GUI apps don't
+   inherit shell PATH).
+
+Blog work lives in the **portfolio repo** (`projects/` parent repo) — check it's
+pushed before switching machines; it deploys to Vercel on push, so review first.
+Claude's session memory does NOT travel between machines — this file is the
+single source of truth; keep §10 current at every checkpoint.
