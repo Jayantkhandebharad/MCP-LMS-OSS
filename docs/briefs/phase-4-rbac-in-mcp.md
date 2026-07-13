@@ -77,12 +77,18 @@ the demo script).
 - `docker/seed/seed_phase4.php` — the role plumbing as reproducible admin actions
 - `mcp_server/tests/test_rbac.py` — the demo as assertions
 
-## Screenshots / demo material still to capture
+## Screenshots (DONE — in docs/screenshots/, same raw URL pattern as always)
 
-- Claude Code connected via HTTP as student vs teacher: the two `/mcp` tool lists
-  side by side (THE hero image)
-- Teacher session: "create a course on X and enrol student1" conversation
-- Optional: curl of `tools/list` with two different bearers, raw JSON diff
+- `phase4-tools-diff.png` — THE hero: side-by-side live tools/list responses,
+  10 vs 14, creator tools highlighted. Open the post with it.
+- `phase4-tools-student.png` / `phase4-tools-teacher.png` — individual panels.
+- `phase4-teacher-demo.png` — REAL headless Claude session (claude -p over
+  Streamable HTTP as teacher1): whoami → create_course → enrol_student →
+  publish_course with visible tool calls. State in the caption that it's a
+  rendered transcript of a real session, and that the panels are rendered
+  live server responses (not a specific client's UI).
+- Regenerate any time: `scripts/screenshots/phase4_rbac_shots.mjs` +
+  `phase4_render_session.mjs` (real transcript in, PNG out).
 
 ## Interview-question angles
 
