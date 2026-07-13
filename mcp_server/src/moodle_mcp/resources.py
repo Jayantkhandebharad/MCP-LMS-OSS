@@ -9,13 +9,13 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import Context
 
+from moodle_mcp.auth import resolve
 from moodle_mcp.quiz_parser import html_to_text
-from moodle_mcp.server import AppContext, mcp
+from moodle_mcp.server import mcp
 
 
 def _moodle(ctx: Context):
-    app: AppContext = ctx.request_context.lifespan_context
-    return app.moodle
+    return resolve(ctx)
 
 
 @mcp.resource("course://{course_id}")

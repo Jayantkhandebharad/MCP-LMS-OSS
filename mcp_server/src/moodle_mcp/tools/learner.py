@@ -10,15 +10,15 @@ from typing import Any
 
 from mcp.server.fastmcp import Context
 
+from moodle_mcp.auth import resolve
 from moodle_mcp.moodle_client import MoodleAPIError
 from moodle_mcp.quiz_parser import html_to_text, parse_question
-from moodle_mcp.server import AppContext, mcp
+from moodle_mcp.server import mcp
 
 
 def _moodle(ctx: Context) -> Any:
-    """The shared MoodleClient created in the server lifespan."""
-    app: AppContext = ctx.request_context.lifespan_context
-    return app.moodle
+    """The Moodle client for THIS request's identity (bearer token or default)."""
+    return resolve(ctx)
 
 
 def _error(e: MoodleAPIError) -> str:
@@ -30,6 +30,27 @@ def _error(e: MoodleAPIError) -> str:
     }
     hint = hints.get(e.errorcode, "")
     return f"Error ({e.errorcode}): {e.message} {hint}".strip()
+
+
+@mcp.tool(name="whoami", annotations={"title": "Who Am I", **{
+    "readOnlyHint": True, "destructiveHint": False,
+    "idempotentHint": True, "openWorldHint": False,
+}})
+async def whoami(ctx: Context) -> str:
+    """Show which Moodle user this session is acting as.
+
+    Useful to confirm identity before quizzes or grade lookups — over HTTP
+    the identity comes from the request's bearer token, so different callers
+    get different answers from the same server.
+    """
+    try:
+        info = await _moodle(ctx).site_info()
+    except MoodleAPIError as e:
+        return _error(e)
+    return (
+        f"You are **{info['fullname']}** (username: {info['username']}, "
+        f"user id: {info['userid']}) on {info['sitename']}."
+    )
 
 
 _READONLY = {
