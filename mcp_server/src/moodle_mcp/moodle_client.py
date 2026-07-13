@@ -51,6 +51,7 @@ class MoodleClient:
         self._token = token
         self._http = httpx.AsyncClient(base_url=base_url.rstrip("/"), timeout=timeout)
         self._site_info: dict[str, Any] | None = None
+        self._can_manage: bool | None = None
 
     async def close(self) -> None:
         await self._http.aclose()
@@ -169,3 +170,31 @@ class MoodleClient:
             "core_course_search_courses", criterianame="search", criteriavalue=query
         )
         return result["courses"]
+
+    async def can_manage_courses(self) -> bool:
+        """Is this identity a course manager (capability-derived, cached)?
+
+        True if the user is a site admin OR Moodle grants them the `update`
+        administration option in any of their courses. Deliberately NOT based
+        on role names — Moodle roles are contextual (an editingteacher can't
+        create courses; a coursecreator might not teach any).
+        """
+        if self._can_manage is None:
+            info = await self.site_info()
+            if info.get("userissiteadmin"):
+                self._can_manage = True
+            else:
+                courses = await self.my_courses()
+                if not courses:
+                    self._can_manage = False
+                else:
+                    result = await self.call(
+                        "core_course_get_user_administration_options",
+                        courseids=[c["id"] for c in courses],
+                    )
+                    self._can_manage = any(
+                        o["name"] == "update" and o["available"]
+                        for c in result["courses"]
+                        for o in c["options"]
+                    )
+        return self._can_manage

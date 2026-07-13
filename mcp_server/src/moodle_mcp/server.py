@@ -67,7 +67,12 @@ mcp = FastMCP("moodle_mcp", lifespan=lifespan, host="127.0.0.1", port=8000)
 
 # Tool/resource/prompt modules register themselves against `mcp` on import.
 from moodle_mcp import prompts, resources  # noqa: E402,F401
-from moodle_mcp.tools import learner  # noqa: E402,F401
+from moodle_mcp.tools import creator, learner  # noqa: E402,F401
+
+# Replace the stock tools/list handler with the role-gated one (Phase 4).
+from moodle_mcp import gating  # noqa: E402
+
+gating.install()
 
 
 def main() -> None:

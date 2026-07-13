@@ -99,8 +99,12 @@ Gotchas, all verified:
   `mod_page_get_pages_by_courses` — course_contents gives file URLs instead;
   fetch page content via the mod_page function (returns `content` HTML directly).
 - Site info (`core_webservice_get_site_info`) returns the caller's identity,
-  their userid, and the exact function list their token can call — effectively
-  a "who am I + what can I do" call. **Perfect for MCP tool-list gating in Phase 4.**
+  their userid, and the function list their token can call.
+  **Phase 4 correction:** that function list is SERVICE-scoped, not user-scoped —
+  every token in `mcp_service` gets the identical 29 functions, so it's useless
+  for role gating. The real capability signal is
+  `core_course_get_user_administration_options` (per-course booleans like
+  `update`), which differs per user. See `docs/briefs/phase-4-rbac-in-mcp.md`.
 - `core_course_edit_section` is deprecated (gone in Moodle 6.0) —
   use `core_courseformat_update_course` instead. Noted for creator tools.
 - Web service create/delete functions exist for courses+users but not activities
