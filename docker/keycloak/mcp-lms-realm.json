@@ -1,0 +1,108 @@
+{
+  "realm": "mcp-lms",
+  "enabled": true,
+  "displayName": "MCP Learning Lab",
+  "registrationAllowed": false,
+  "sslRequired": "external",
+  "accessTokenLifespan": 3600,
+  "users": [
+    {
+      "username": "student1",
+      "enabled": true,
+      "firstName": "Sam",
+      "lastName": "Student",
+      "email": "student1@example.com",
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Student1!pass", "temporary": false }]
+    },
+    {
+      "username": "teacher1",
+      "enabled": true,
+      "firstName": "Tina",
+      "lastName": "Teacher",
+      "email": "teacher1@example.com",
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Teacher1!pass", "temporary": false }]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "other-service-cli",
+      "description": "Test client for the RFC 8707 negative case: its tokens are valid realm tokens but NOT audience-bound to the MCP server, so the MCP server must reject them (this is what stops confused-deputy token reuse).",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "enabled": true,
+      "defaultClientScopes": ["profile", "email"],
+      "optionalClientScopes": []
+    },
+    {
+      "clientId": "lab-cli",
+      "description": "Password-grant test client for the lab ONLY (curl token testing). Real MCP clients register dynamically and use auth-code + PKCE.",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "enabled": true,
+      "defaultClientScopes": ["mcp-resource", "lms:read", "profile", "email"],
+      "optionalClientScopes": ["lms:write"]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "mcp-resource",
+      "description": "Stamps the MCP server's identifier into the token audience (RFC 8707 resource binding). Without this claim the server rejects the token.",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "false" },
+      "protocolMappers": [
+        {
+          "name": "mcp-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "http://127.0.0.1:8000/mcp",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "mcp-username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "username",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        },
+        {
+          "name": "mcp-email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "email",
+            "claim.name": "email",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "lms:read",
+      "description": "Read course content, quizzes, own grades",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true" }
+    },
+    {
+      "name": "lms:write",
+      "description": "Attempt quizzes and manage courses (subject to LMS permissions)",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true" }
+    }
+  ],
+  "defaultDefaultClientScopes": ["mcp-resource", "lms:read", "profile", "email"],
+  "defaultOptionalClientScopes": ["lms:write"]
+}

@@ -48,7 +48,22 @@ services:
       - moodledata:/var/www/moodledata
       - moodlehtml:/var/www/html
 
+  # Phase 5: OSS identity provider for the MCP OAuth 2.1 flow.
+  # Dev mode + realm import = fully reproducible IdP; NOT a production setup.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    command: start-dev --import-realm --http-port=8081
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASS:?set KC_ADMIN_PASS in docker/.env}
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+      - kcdata:/opt/keycloak/data
+
 volumes:
   pgdata:
   moodledata:
   moodlehtml:
+  kcdata:

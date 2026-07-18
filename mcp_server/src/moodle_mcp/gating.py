@@ -21,24 +21,11 @@ from moodle_mcp.tools.creator import CREATOR_TOOLS
 
 async def _caller_is_creator() -> bool:
     """Resolve the CURRENT request's identity and ask Moodle, not a role name."""
-    rc = mcp._mcp_server.request_context
-    pool = rc.lifespan_context.pool
-
-    token = None
-    request = getattr(rc, "request", None)
-    if request is not None and hasattr(request, "headers"):
-        auth_header = request.headers.get("authorization", "")
-        scheme, _, value = auth_header.partition(" ")
-        if scheme.lower() == "bearer" and value.strip():
-            token = value.strip()
-
-    client = pool.for_token(token) if token else pool.default
-    if client is None:
-        return False  # unauthenticated callers get the learner-only view
     try:
+        client = auth.resolve_from_request_context(mcp._mcp_server.request_context)
         return await client.can_manage_courses()
     except Exception:
-        return False  # bad token etc. — fail closed to the smaller tool set
+        return False  # no/bad identity — fail closed to the learner-only view
 
 
 async def gated_list_tools() -> list[MCPTool]:

@@ -63,7 +63,33 @@ async def lifespan(_server: FastMCP) -> AsyncIterator[AppContext]:
         await pool.close()
 
 
-mcp = FastMCP("moodle_mcp", lifespan=lifespan, host="127.0.0.1", port=8000)
+def _auth_config() -> dict:
+    """Act 2 (MOODLE_MCP_AUTH=oauth): run as an OAuth 2.1 resource server.
+
+    The SDK then mounts /.well-known/oauth-protected-resource (RFC 9728)
+    and challenges unauthenticated requests with a WWW-Authenticate header
+    pointing at it — which is exactly how MCP clients discover Keycloak.
+    """
+    if os.environ.get("MOODLE_MCP_AUTH", "act1") != "oauth":
+        return {}
+    from pydantic import AnyHttpUrl
+
+    from mcp.server.auth.settings import AuthSettings
+    from moodle_mcp.oauth import KeycloakTokenVerifier
+
+    issuer = os.environ.get("KEYCLOAK_ISSUER", "http://localhost:8081/realms/mcp-lms")
+    resource = os.environ.get("MCP_RESOURCE_URL", "http://127.0.0.1:8000/mcp")
+    return {
+        "token_verifier": KeycloakTokenVerifier(issuer, resource),
+        "auth": AuthSettings(
+            issuer_url=AnyHttpUrl(issuer),
+            resource_server_url=AnyHttpUrl(resource),
+            required_scopes=["lms:read"],
+        ),
+    }
+
+
+mcp = FastMCP("moodle_mcp", lifespan=lifespan, host="127.0.0.1", port=8000, **_auth_config())
 
 # Tool/resource/prompt modules register themselves against `mcp` on import.
 from moodle_mcp import prompts, resources  # noqa: E402,F401
