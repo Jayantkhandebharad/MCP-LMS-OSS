@@ -110,10 +110,15 @@ async def _session_tools_and_whoami(token: str):
             return who, tools
 
 
+CREATOR_TOOLS = {"create_course", "publish_course", "enrol_student", "view_course_analytics"}
+LEARNER_STAPLES = {"list_my_courses", "start_quiz", "get_my_grades", "generate_practice_quiz"}
+
+
 async def test_student_jwt_maps_to_moodle_identity(oauth_server):
     who, tools = await _session_tools_and_whoami(_jwt("student1", "Student1!pass"))
     assert "Sam Student" in who
-    assert "create_course" not in tools and len(tools) == 10
+    assert LEARNER_STAPLES <= tools  # incl. the sampling tool
+    assert CREATOR_TOOLS & tools == set()  # no creator tools for a student
 
 
 async def test_teacher_jwt_gets_creator_tools(oauth_server):
@@ -121,4 +126,4 @@ async def test_teacher_jwt_gets_creator_tools(oauth_server):
     layer from Phase 4 composes unchanged with Act 2 auth."""
     who, tools = await _session_tools_and_whoami(_jwt("teacher1", "Teacher1!pass"))
     assert "Tina Teacher" in who
-    assert "create_course" in tools and len(tools) == 14
+    assert CREATOR_TOOLS <= tools and LEARNER_STAPLES <= tools

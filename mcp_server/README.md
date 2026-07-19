@@ -63,6 +63,8 @@ Restart Claude Desktop; the hammer icon shows 9 Moodle tools, and the
 
 | Primitive | Names |
 |---|---|
-| Tools (9) | `list_my_courses`, `get_course_contents`, `get_topic_material`, `get_quizzes`, `start_quiz`, `submit_quiz_answers`, `get_my_grades`, `get_my_progress`, `search_courses` |
+| Learner tools | `whoami`, `list_my_courses`, `get_course_contents`, `get_topic_material`, `get_quizzes`, `start_quiz`, `submit_quiz_answers`, `get_my_grades`, `get_my_progress`, `search_courses` |
+| Sampling tools (LLM) | `generate_practice_quiz`, `explain_concept` — server-initiated LLM calls; need a client that supports MCP sampling |
+| Creator tools (teacher/manager) | `create_course`, `publish_course`, `enrol_student`, `view_course_analytics` |
 | Resources | `course://{id}`, `course://{id}/topic/{n}`, `quiz://{id}` |
 | Prompts | `quiz_me`, `study_plan`, `explain_like_im_new` |
