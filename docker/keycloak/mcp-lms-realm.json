@@ -13,7 +13,8 @@
       "lastName": "Student",
       "email": "student1@example.com",
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Student1!pass", "temporary": false }]
+      "credentials": [{ "type": "password", "value": "Student1!pass", "temporary": false }],
+      "realmRoles": ["default-roles-mcp-lms"]
     },
     {
       "username": "teacher1",
@@ -22,7 +23,8 @@
       "lastName": "Teacher",
       "email": "teacher1@example.com",
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Teacher1!pass", "temporary": false }]
+      "credentials": [{ "type": "password", "value": "Teacher1!pass", "temporary": false }],
+      "realmRoles": ["default-roles-mcp-lms"]
     }
   ],
   "clients": [
@@ -43,16 +45,16 @@
       "directAccessGrantsEnabled": true,
       "standardFlowEnabled": false,
       "enabled": true,
-      "defaultClientScopes": ["mcp-resource", "lms:read", "profile", "email"],
+      "defaultClientScopes": ["lms:read", "profile", "email"],
       "optionalClientScopes": ["lms:write"]
     }
   ],
   "clientScopes": [
     {
-      "name": "mcp-resource",
-      "description": "Stamps the MCP server's identifier into the token audience (RFC 8707 resource binding). Without this claim the server rejects the token.",
+      "name": "lms:read",
+      "description": "Read course content, quizzes, own grades. Its mappers also stamp the token audience (RFC 8707) + identity claims, so a DCR client that only requests advertised scopes still gets what the server needs.",
       "protocol": "openid-connect",
-      "attributes": { "include.in.token.scope": "false" },
+      "attributes": { "include.in.token.scope": "true" },
       "protocolMappers": [
         {
           "name": "mcp-audience",
@@ -91,19 +93,13 @@
       ]
     },
     {
-      "name": "lms:read",
-      "description": "Read course content, quizzes, own grades",
-      "protocol": "openid-connect",
-      "attributes": { "include.in.token.scope": "true" }
-    },
-    {
       "name": "lms:write",
       "description": "Attempt quizzes and manage courses (subject to LMS permissions)",
       "protocol": "openid-connect",
       "attributes": { "include.in.token.scope": "true" }
     }
   ],
-  "defaultDefaultClientScopes": ["mcp-resource", "lms:read", "profile", "email"],
+  "defaultDefaultClientScopes": ["lms:read", "profile", "email"],
   "defaultOptionalClientScopes": [
     "lms:write",
     "offline_access",

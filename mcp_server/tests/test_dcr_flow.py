@@ -125,12 +125,19 @@ async def test_full_flow_from_zero(oauth_server):
     issuer = prm["authorization_servers"][0]
     oidc = httpx.get(f"{issuer}/.well-known/openid-configuration").json()
 
-    # 3. Dynamic Client Registration — no admin pre-provisioning
+    # 3. Dynamic Client Registration — no admin pre-provisioning.
+    # Register the way a REAL client (Claude Code) does: request only the
+    # scopes advertised in PRM, plus openid/offline_access. This is the case
+    # that broke in practice — Keycloak assigns a DCR client only the scopes
+    # it requests, so the audience/identity mappers must ride on lms:read
+    # (a scope the client actually asks for), not a separate resource scope.
+    advertised = " ".join(["openid", "offline_access", *prm["scopes_supported"]])
     reg = httpx.post(oidc["registration_endpoint"], json={
         "client_name": "pytest MCP client",
         "redirect_uris": [REDIRECT_URI],
         "grant_types": ["authorization_code", "refresh_token"],
         "token_endpoint_auth_method": "none",
+        "scope": advertised,
     })
     assert reg.status_code == 201
     client_id = reg.json()["client_id"]
@@ -144,7 +151,7 @@ async def test_full_flow_from_zero(oauth_server):
     try:
         r = browser.get(oidc["authorization_endpoint"], params={
             "client_id": client_id, "redirect_uri": REDIRECT_URI,
-            "response_type": "code", "scope": "openid lms:read lms:write",
+            "response_type": "code", "scope": "openid lms:read offline_access",
             "code_challenge": challenge, "code_challenge_method": "S256",
             "state": "xyz",
         })

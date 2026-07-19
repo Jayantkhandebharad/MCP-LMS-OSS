@@ -86,6 +86,36 @@ receipts in git history).
   (`execution=OAUTH_GRANT`), not inline after login — headless flows need a
   tiny redirect state machine. And the consent form's action is relative.
 
+## The bug that only a REAL client found (2026-07-19) — great war story
+
+The headless test passed, then Claude Code's **Authenticate** button failed three
+different ways in a row. Each failure taught something the test had faked past:
+
+1. **"Policy 'Allowed Client Scopes' rejected request ... not permitted to use
+   specified clientScope"** — Keycloak's anonymous DCR is guarded by policies. Our
+   realm's `defaultOptionalClientScopes` had *replaced* Keycloak's built-ins,
+   dropping `offline_access` that real clients request for refresh tokens; and the
+   "Allowed Client Scopes" policy (internal id `allowed-client-templates` — a fossil
+   name!) only permits the realm's default scope list. Fix: restore built-in
+   optionals + have `configure_dcr.py` remove that policy too.
+2. **`invalid_scope: lms:read offline_access` at the authorization step** — the real
+   root cause, and the important lesson. **Keycloak assigns a DCR client only the
+   scopes it requests**, and a generic MCP client only knows the scopes we advertise
+   in Protected Resource Metadata. Our audience + identity mappers lived on a
+   separate `mcp-resource` scope the client never asked for → its token had no
+   audience and no username. The test had passed only because it registered with NO
+   scope field, silently getting the realm defaults — a fidelity gap between test and
+   reality. Fix: **move the audience + username + email mappers onto `lms:read`**, the
+   one scope the client always requests. Everything the server needs now rides on it.
+3. **`Offline tokens not allowed for the user or client`** — our partial realm import
+   created users with ZERO role mappings, so they lacked the `offline_access` realm
+   role (normally granted via the `default-roles-<realm>` composite). Refresh-token
+   issuance failed. Fix: `"realmRoles": ["default-roles-mcp-lms"]` on each user.
+
+Meta-lesson for the post: **a headless test that constructs the "ideal" request can
+pass while every real client fails.** The fix made the test register exactly as Claude
+Code does (only PRM-advertised scopes) so the gap can't reopen.
+
 ## The proof (write the post around this test)
 
 `tests/test_dcr_flow.py::test_full_flow_from_zero` — a "client" born with
