@@ -137,16 +137,16 @@ The post can walk this test top to bottom — it IS the spec, executable.
 
 - [x] DCR enabled (`configure_dcr.py`) — anonymous registration works, consent kept
 - [x] Full flow proven headless (`test_dcr_flow.py::test_full_flow_from_zero`)
-- [ ] **Interactive demo + screenshots** (the money shots). Runbook:
-      1. `cd docker && docker compose up -d` (Moodle + Keycloak) and run
-         `python3 keycloak/configure_dcr.py` once per fresh Keycloak volume
-      2. `cd mcp_server && MOODLE_MCP_AUTH=oauth uv run moodle-mcp --http`
-      3. `claude mcp add --transport http moodle-oauth http://127.0.0.1:8000/mcp`
-      4. new Claude Code session → `/mcp` → moodle-oauth → **Authenticate**
-         → browser opens Keycloak → log in as student1 / Student1!pass →
-         consent screen → tools appear
-      Shots: `phase5-kc-login.png`, `phase5-kc-consent.png`,
-      `phase5-oauth-connected.png` (+ optional `phase5-whoami.png`)
+- [x] **Screenshots DONE** — all three in docs/screenshots/, script-generated
+      from the REAL Keycloak flow (not mockups):
+      - `phase5-kc-login.png` — the actual Keycloak login page (MCP Learning Lab realm)
+      - `phase5-kc-consent.png` — the consent screen: "Grant Access to Claude Code",
+        scopes Offline Access + lms:read, Yes/No. THE flagship visual.
+      - `phase5-oauth-connected.png` — the payoff: `claude mcp add` with NO token,
+        connected, whoami=Sam Student, + the Act-1-vs-Act-2 contrast callout
+      Regenerate: `phase5_oauth_shots.mjs` + `phase5_connected_shot.mjs`.
+      (An interactive Claude Code capture of the real /mcp panel is a nice-to-have
+      the user can add, but the authentic Keycloak pages above are the essential set.)
 - [ ] Decided: Moodle SSO via Keycloak OIDC → DEFERRED to a blog sidebar
       (identity already unified by the username mapping; SSO is cosmetic here)
 - [ ] Diagrams: the full flow sequence (client ⇄ server ⇄ Keycloak ⇄ user), and
