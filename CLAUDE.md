@@ -84,7 +84,7 @@ Also expose non-tool primitives (interview coverage):
 | **4** | **Streamable HTTP** transport; multi-user bearer→Moodle-token mapping; **role-gated tools** (teacher tools appear) | 📝 **Blog #2: RBAC in MCP — different tools for different users** |
 | **5** | **Keycloak + OAuth 2.1** per MCP spec (§5 Act 2) | 📝 **Blog #3 (flagship): MCP auth done right** |
 | **6** | Polish: sampling-powered `generate_practice_quiz`; security hardening pass (tool poisoning, prompt injection, confused deputy) | 📝 **Blog #4: Securing an MCP server** |
-| **7** | *(deferred)* Docker → kind → GKE Autopilot/Cloud Run, Helm chart | 📝 Blog #5 |
+| **7** | *(deferred)* Docker → kind → GKE Autopilot/Cloud Run, Helm chart | *(no blog in this series — deployment write-up lives elsewhere/later)* |
 
 Everything through Phase 6 runs free on a Mac with Docker Desktop.
 
@@ -143,7 +143,7 @@ MCP-LMS-OSS/
 - [x] Phase 4: HTTP + RBAC (2026-07-13) — Streamable HTTP (`--http`, 127.0.0.1:8000/mcp), bearer→identity ClientPool (`auth.py`), capability-derived gating (`gating.py` swaps the tools/list handler; signal = `core_course_get_user_administration_options`, NOT site_info's service-scoped function list), creator tools (`tools/creator.py`: create/publish/enrol-by-email/analytics), `seed_phase4.php` (coursecreator grant + role plumbing + noemailever). 13/13 tests incl. full teacher workflow. Blog #2 brief: `docs/briefs/phase-4-rbac-in-mcp.md` (10 gotchas logged). **Remaining: demo screenshots for the post.**
 - [~] Phase 5: OAuth 2.1 + Keycloak — Blog #3. **Code DONE (2026-07-18/19), 20/20 tests.** Keycloak 26.4 in compose (realm-as-code `docker/keycloak/mcp-lms-realm.json` + `configure_dcr.py`); `oauth.py` verifier (JWKS/iss/exp/aud RFC 8707, scopes); `auth.py` maps JWT username → server-held Moodle token (no passthrough); `MOODLE_MCP_AUTH=oauth` enables; PRM (RFC 9728) + 401 challenge from SDK; anonymous DCR works; `test_dcr_flow.py` = whole spec headless (401→PRM→DCR→PKCE login+consent→aud-bound JWT→"You are Sam Student"). Decision: Moodle-SSO-via-Keycloak deferred to a blog sidebar. **Remaining: interactive Claude Code OAuth demo + screenshots (steps in brief), then Blog #3 handoff.** Brief: `docs/briefs/phase-5-mcp-auth-done-right.md`.
 - [x] Phase 6: sampling + security (2026-07-19) — `tools/sampling.py` (generate_practice_quiz + explain_concept via `ctx.session.create_message`; no server LLM key, degrades if client can't sample), `safety.py` (fence untrusted Moodle content vs prompt injection), `notes/security-notes.md` (full threat model). 25/25 tests incl. mock-sampler fenced-content proof. Blog #4 brief: `docs/briefs/phase-6-securing-an-mcp-server.md`. **Remaining: sampling demo screenshot.**
-- [ ] Phase 7: k8s + GCP — Blog #5 *(deferred)*
+- [ ] Phase 7: k8s + GCP *(deferred; NO blog for this phase — deployment write-up happens elsewhere/later, not in this MCP series)*
 
 ## 11. Picking up on a new machine
 

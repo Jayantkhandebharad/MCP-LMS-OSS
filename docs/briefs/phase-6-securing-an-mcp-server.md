@@ -84,9 +84,12 @@ sampling request for human approval/response (which also perfectly illustrates
 
 - `phase6-sampling-degrades.png` — Claude Code returning the `_NO_SAMPLING`
   message: the honest "this client can't sample" negotiation moment.
-- `phase6-sampling-inspector.png` — MCP Inspector showing the server's sampling
-  REQUEST awaiting human approval, then the generated questions. The real
-  happy-path demo. (Ask Claude to spin up the Inspector against the server.)
+- `phase6-sampling-demo.png` — **DONE, in docs/screenshots/.** A real sampling
+  round-trip: steps ①② (system rules + real Moodle content fenced as untrusted)
+  captured LIVE from the running server via a sampling-capable demo client
+  (`scripts/demo/sampling_demo.py`); step ③ the completion. Honestly captioned
+  that Claude Code can't sample. This is the sampling hero image — it shows the
+  server-initiated call AND the injection fence in one shot.
 - Optional: a deliberately-poisoned page (inject a line in a seeded page) and
   show the fenced content NOT being obeyed — powerful, but stage carefully.
 
