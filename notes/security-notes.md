@@ -63,6 +63,11 @@ names** — contextual roles lie (an editingteacher can't create courses).
 - Sampling is **server-initiated but client-approved**: the user's client can
   inspect, modify, or reject every `create_message` request. We don't hold an
   LLM key; we borrow the client's model.
+- **Not every client supports sampling.** Verified: Claude Code does not
+  advertise the capability, so our tool detects that and returns a clear message
+  rather than failing — capability negotiation, not an assumption. (A real
+  server-initiated sampling run needs a sampling-capable client, e.g. MCP
+  Inspector.)
 - `max_tokens` is capped per call; `num_questions` is clamped 1–10.
 - If the client doesn't support sampling, the tool returns a clear message
   instead of erroring. → `tools/sampling.py` (`_NO_SAMPLING`).

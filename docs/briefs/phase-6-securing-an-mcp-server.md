@@ -64,14 +64,31 @@ writeup already in `notes/security-notes.md` — the post narrates the best 3–
 - `mcp_server/tests/test_sampling.py` — mock sampler + the fenced-content assertion
 - `notes/security-notes.md` — the whole threat model, as the post's backbone
 
+## IMPORTANT honesty note (verified 2026-07-20) — Claude Code can't sample
+
+**Claude Code does NOT advertise the MCP `sampling` capability**, so calling
+`generate_practice_quiz` from Claude Code hits our graceful-degradation path
+(`_NO_SAMPLING`), NOT a real server-initiated completion. (If you then see a
+quiz, that's Claude the AGENT writing it after reading the material — not our
+sampling code.) The blog MUST NOT claim "Claude Code ran the sampling call."
+This is a real, teachable fact: **not every MCP client supports every
+capability; a good server negotiates and degrades cleanly.** The
+degradation-message screenshot IS a legitimate demo of capability negotiation.
+
+Most clients don't implement sampling yet. For an ACTUAL server-initiated
+sampling demo, use a client that supports it — **MCP Inspector** surfaces the
+sampling request for human approval/response (which also perfectly illustrates
+"the client/user stays in control"). That approval UI is the money shot.
+
 ## Screenshots / demo material to capture
 
-- A sampling run in a real client (Claude Desktop/Code supports sampling):
-  `generate_practice_quiz` producing fresh questions → `phase6-sampling-demo.png`.
-  NOTE: Claude Code CLI may prompt to approve the sampling request — that
-  approval dialog is itself a great "client stays in control" shot.
+- `phase6-sampling-degrades.png` — Claude Code returning the `_NO_SAMPLING`
+  message: the honest "this client can't sample" negotiation moment.
+- `phase6-sampling-inspector.png` — MCP Inspector showing the server's sampling
+  REQUEST awaiting human approval, then the generated questions. The real
+  happy-path demo. (Ask Claude to spin up the Inspector against the server.)
 - Optional: a deliberately-poisoned page (inject a line in a seeded page) and
-  show the model NOT obeying it — powerful, but stage carefully.
+  show the fenced content NOT being obeyed — powerful, but stage carefully.
 
 ## Interview-question angles
 
