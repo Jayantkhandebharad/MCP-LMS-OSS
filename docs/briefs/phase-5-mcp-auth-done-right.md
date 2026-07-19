@@ -70,6 +70,30 @@ receipts in git history).
   `docker volume rm docker_kcdata`. The IdP is code, not clicks.
 - `lab-cli` password-grant client exists ONLY for curl/pytest (labeled as such
   in the realm); real clients use auth-code + PKCE + DCR.
+- **(2026-07-18, DCR day) Keycloak's anonymous-DCR "Trusted Hosts" policy can
+  never pass from a Docker host** — Keycloak sees the gateway IP, not you.
+  Lab fix: `docker/keycloak/configure_dcr.py` deletes that one policy, KEEPS
+  consent-required (dynamically registered clients must show a consent screen —
+  exactly what MCP wants) and max-clients etc. Production note: initial access
+  tokens instead of anonymous DCR.
+- **Keycloak login cookies are `Secure; SameSite=None` even over plain http.**
+  Real browsers send them anyway (localhost = secure context); Python's
+  http.cookiejar refuses on two separate grounds (secure-over-http + RFC 2965
+  Version=1), yielding Keycloak's cryptic "Restart login cookie not found".
+  Our headless test carries cookies by hand (`_Browser` in test_dcr_flow.py).
+  GREAT sidebar: "why your OAuth test fails but your browser works".
+- Keycloak serves consent as a *redirect* to a required-action page
+  (`execution=OAUTH_GRANT`), not inline after login — headless flows need a
+  tiny redirect state machine. And the consent form's action is relative.
+
+## The proof (write the post around this test)
+
+`tests/test_dcr_flow.py::test_full_flow_from_zero` — a "client" born with
+nothing but the server URL: 401 → PRM → OIDC discovery → **anonymous DCR**
+(201, fresh client_id) → auth-code + PKCE through Keycloak's REAL login and
+consent forms as student1 → code exchange → audience-bound JWT → MCP session
+says "You are Sam Student" with learner tools only. Zero manual provisioning.
+The post can walk this test top to bottom — it IS the spec, executable.
 
 ## Code moments (RepoFile embeds)
 
