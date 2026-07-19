@@ -63,17 +63,26 @@ components = call(
     "GET", f"/admin/realms/mcp-lms/components?type={urllib.parse.quote(POLICY_TYPE)}", admin_token
 )
 
+# Anonymous policies that block a legit localhost MCP client:
+# - trusted-hosts: Keycloak sees the Docker gateway IP, never a trusted host
+# - allowed-client-templates: displays as "Allowed Client Scopes" (providerId
+#   is a fossil from the client-templates era!) — rejects registrations
+#   requesting standard scopes like offline_access, which Claude Code's DCR
+#   asks for (it honors only the realm DEFAULT scope list, not optionals)
+# - scope ("Full Scope Disabled"): removed for lab determinism alongside it
+REMOVE = {"trusted-hosts", "allowed-client-templates", "scope"}
+
 removed = 0
 for c in components:
-    if c.get("subType") == "anonymous" and c.get("providerId") == "trusted-hosts":
+    if c.get("subType") == "anonymous" and c.get("providerId") in REMOVE:
         call("DELETE", f"/admin/realms/mcp-lms/components/{c['id']}", admin_token)
         print(f"[ok] removed anonymous policy: {c['name']} ({c['providerId']})")
         removed += 1
 
 if not removed:
-    print("[skip] no anonymous trusted-hosts policy present (already removed)")
+    print("[skip] target anonymous policies already removed")
 
 kept = [c["providerId"] for c in components if c.get("subType") == "anonymous"
-        and c.get("providerId") != "trusted-hosts"]
+        and c.get("providerId") not in REMOVE]
 print(f"[ok] anonymous DCR policies kept: {', '.join(kept)}")
 print("=== DCR configured ===")

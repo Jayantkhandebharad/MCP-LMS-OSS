@@ -104,5 +104,12 @@
     }
   ],
   "defaultDefaultClientScopes": ["mcp-resource", "lms:read", "profile", "email"],
-  "defaultOptionalClientScopes": ["lms:write"]
+  "defaultOptionalClientScopes": [
+    "lms:write",
+    "offline_access",
+    "address",
+    "phone",
+    "microprofile-jwt",
+    "organization"
+  ]
 }
