@@ -78,3 +78,8 @@ Keycloak authorization endpoint via a dynamically-registered client) and
 
 ### Connected with zero secrets in the config (the auth-series payoff)
 ![OAuth connected](phase5-oauth-connected.png)
+
+### The real Claude Code MCP panel after OAuth login: ✓ Connected, 10 learner tools
+Authenticated as student1 via the full OAuth flow — note the read-only badges (our
+annotations) and that only the learner tool set is present (RBAC gating over OAuth identity).
+![Real OAuth-connected panel](phase5-oauth-connected-real.png)
