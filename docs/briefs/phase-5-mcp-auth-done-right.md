@@ -105,14 +105,20 @@ The post can walk this test top to bottom — it IS the spec, executable.
 
 ## Still to do in Phase 5 (before the post is written)
 
-- [ ] DCR: relax Keycloak's anonymous client-registration policy (trusted
-      hosts) so a real MCP client can self-register
-- [ ] The real-client demo: `claude mcp add --transport http` → 401 → browser
-      opens Keycloak login as student1 → consent → tools appear. Screenshots:
-      Keycloak login page, consent screen, connected client. THE money shots.
-- [ ] Decide: Moodle SSO via Keycloak OIDC (plan §5 "same users" box) — stretch
-      goal; identity is already unified by username mapping, SSO is cosmetic
-      for the demo but completes the architecture diagram. Maybe Blog #3 sidebar.
+- [x] DCR enabled (`configure_dcr.py`) — anonymous registration works, consent kept
+- [x] Full flow proven headless (`test_dcr_flow.py::test_full_flow_from_zero`)
+- [ ] **Interactive demo + screenshots** (the money shots). Runbook:
+      1. `cd docker && docker compose up -d` (Moodle + Keycloak) and run
+         `python3 keycloak/configure_dcr.py` once per fresh Keycloak volume
+      2. `cd mcp_server && MOODLE_MCP_AUTH=oauth uv run moodle-mcp --http`
+      3. `claude mcp add --transport http moodle-oauth http://127.0.0.1:8000/mcp`
+      4. new Claude Code session → `/mcp` → moodle-oauth → **Authenticate**
+         → browser opens Keycloak → log in as student1 / Student1!pass →
+         consent screen → tools appear
+      Shots: `phase5-kc-login.png`, `phase5-kc-consent.png`,
+      `phase5-oauth-connected.png` (+ optional `phase5-whoami.png`)
+- [ ] Decided: Moodle SSO via Keycloak OIDC → DEFERRED to a blog sidebar
+      (identity already unified by the username mapping; SSO is cosmetic here)
 - [ ] Diagrams: the full flow sequence (client ⇄ server ⇄ Keycloak ⇄ user), and
       the confused-deputy "before/after" pair.
 
