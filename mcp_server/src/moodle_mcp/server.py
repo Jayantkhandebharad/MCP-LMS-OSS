@@ -101,11 +101,58 @@ from moodle_mcp import gating  # noqa: E402
 gating.install()
 
 
+PRM_PATH = "/.well-known/oauth-protected-resource/mcp"
+
+
+def _advertise_extra_scopes(app) -> None:
+    """Widen the advertised scopes without widening what we REQUIRE.
+
+    The SDK ties Protected Resource Metadata `scopes_supported` to
+    `required_scopes` (which we enforce = ["lms:read"]). But a real MCP
+    client (Claude Code) also wants `offline_access` for a refresh token,
+    and Keycloak only grants a dynamically-registered client the scopes it
+    requested at registration — which it derives from this metadata. So a
+    scope we don't advertise can never be obtained.
+
+    Fix: advertise lms:read + lms:write + offline_access, keep requiring only
+    lms:read. Advertise ≠ require — the classic distinction the coupling hides.
+    """
+    from starlette.responses import JSONResponse
+    from starlette.routing import Route
+
+    resource = os.environ.get("MCP_RESOURCE_URL", "http://127.0.0.1:8000/mcp")
+    issuer = os.environ.get("KEYCLOAK_ISSUER", "http://localhost:8081/realms/mcp-lms")
+    metadata = {
+        "resource": resource,
+        "authorization_servers": [issuer],
+        "scopes_supported": ["lms:read", "lms:write", "offline_access"],
+        "bearer_methods_supported": ["header"],
+    }
+
+    async def prm(_request):
+        return JSONResponse(metadata, headers={"Access-Control-Allow-Origin": "*"})
+
+    routes = app.router.routes
+    for i, route in enumerate(routes):
+        if getattr(route, "path", None) == PRM_PATH:
+            routes[i] = Route(PRM_PATH, prm, methods=["GET", "OPTIONS"])
+            break
+
+
 def main() -> None:
-    if "--http" in sys.argv:
-        mcp.run(transport="streamable-http")
-    else:
+    if "--http" not in sys.argv:
         mcp.run()  # stdio
+        return
+    if os.environ.get("MOODLE_MCP_AUTH", "act1") != "oauth":
+        mcp.run(transport="streamable-http")
+        return
+    # OAuth mode: build the app, widen advertised scopes, then serve.
+    import uvicorn
+
+    app = mcp.streamable_http_app()
+    _advertise_extra_scopes(app)
+    uvicorn.run(app, host=mcp.settings.host, port=mcp.settings.port,
+                log_level=mcp.settings.log_level.lower())
 
 
 if __name__ == "__main__":

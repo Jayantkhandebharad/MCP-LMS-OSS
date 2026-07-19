@@ -116,6 +116,31 @@ Meta-lesson for the post: **a headless test that constructs the "ideal" request 
 pass while every real client fails.** The fix made the test register exactly as Claude
 Code does (only PRM-advertised scopes) so the gap can't reopen.
 
+4. **`offline_access` and "advertise ≠ require"** (the deepest one, 2026-07-19). Even
+   after (2), Claude Code still failed at the authorization step with
+   `error=invalid_scope … lms:read offline_access` delivered to its callback. Chain:
+   Claude asks Keycloak for a REFRESH token → adds `offline_access` to its authorization
+   request → but Keycloak only grants a dynamically-registered client the scopes it
+   requested AT REGISTRATION, and Claude derives those from our Protected Resource
+   Metadata `scopes_supported` (which listed only `lms:read`). So the client never had
+   `offline_access`, and requesting it => invalid_scope. Confirmed by reproduction: an
+   identical client shows the login form for `scope=lms:read` but 302-redirects an
+   `invalid_scope` error the moment `offline_access` is added.
+   The catch: the MCP SDK ties PRM `scopes_supported` to the server's *enforced*
+   `required_scopes` (a token missing a required scope gets 403). We must ADVERTISE
+   `offline_access` (so clients can request it) without REQUIRING it (or a token
+   without it — e.g. our password-grant test client — would be rejected). Fix: keep
+   `required_scopes=["lms:read"]` but replace the PRM route to advertise
+   `["lms:read","lms:write","offline_access"]`. `server.py::_advertise_extra_scopes`.
+   **This is a genuinely good teaching moment: "scopes a resource server ADVERTISES as
+   available" and "scopes it REQUIRES on every token" are different sets, and conflating
+   them breaks refresh tokens for real clients.**
+
+Also worth noting: forcing `offline_access` as a Keycloak realm *default* scope does NOT
+reach a client that registers with an explicit `scope` field — the scope param replaces
+defaults entirely. Verified empirically. So advertising it (so the client requests it)
+is the only route.
+
 ## The proof (write the post around this test)
 
 `tests/test_dcr_flow.py::test_full_flow_from_zero` — a "client" born with
